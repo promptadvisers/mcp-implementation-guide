@@ -41,3 +41,6 @@ logs/
 *.temp
 .tmp/
 .temp/
+
+# Conversation logs
+conversation-log.md
