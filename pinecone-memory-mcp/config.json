@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "pinecone-memory": {
+      "command": "python",
+      "args": [
+        "/path/to/pinecone-memory-mcp/src/index.py"
+      ],
+      "env": {
+        "PINECONE_API_KEY": "your-pinecone-api-key",
+        "PINECONE_INDEX_NAME": "memory-index",
+        "OPENAI_API_KEY": "your-openai-api-key"
+      }
+    }
+  }
+}
