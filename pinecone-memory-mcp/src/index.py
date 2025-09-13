@@ -11,6 +11,7 @@ Tools:
 
 import asyncio
 import os
+import sys
 import json
 from datetime import datetime
 from typing import Dict, Any, Optional
@@ -19,6 +20,14 @@ from collections.abc import AsyncIterator
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
+
+# Try SSE import for HTTP transport
+try:
+    from mcp.server.sse import sse_server
+    SSE_AVAILABLE = True
+except ImportError:
+    SSE_AVAILABLE = False
+
 from mcp.types import Tool, TextContent
 
 from dotenv import load_dotenv
@@ -357,18 +366,97 @@ async def recall_memory(query: str, top_k: int = 5) -> str:
 
 
 async def main():
-    """Main entry point for the MCP server."""
+    """Main entry point for the MCP server supporting both stdio and SSE transports."""
     # Initialize context at startup
     await initialize_context()
     
-    # Run the stdio server
-    async with stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            server.create_initialization_options()
-        )
+    # Determine transport from environment or command line
+    transport = os.getenv("MCP_TRANSPORT", "stdio")
+    
+    # Check command line args
+    if len(sys.argv) > 1:
+        if sys.argv[1] in ["--sse", "-s"]:
+            transport = "sse"
+        elif sys.argv[1] in ["--stdio", "-i"]:
+            transport = "stdio"
+        elif sys.argv[1] in ["--help", "-h"]:
+            print("""
+Pinecone Memory MCP Server
+
+Usage:
+    python index.py [options]
+    
+Options:
+    --stdio, -i    Use stdio transport (default)
+    --sse, -s      Use SSE/HTTP transport
+    --help, -h     Show this help message
+    
+Environment Variables:
+    MCP_TRANSPORT  Set to 'stdio' or 'sse' (default: stdio)
+    HOST           SSE server host (default: 0.0.0.0)
+    PORT           SSE server port (default: 8080)
+            """)
+            sys.exit(0)
+    
+    if transport == "sse" and SSE_AVAILABLE:
+        # Run as HTTP server with SSE
+        host = os.getenv("HOST", "0.0.0.0")
+        port = int(os.getenv("PORT", "8080"))
+        
+        print(f"🚀 Starting Pinecone Memory MCP Server (SSE mode)")
+        print(f"📡 Listening on http://{host}:{port}")
+        print(f"📝 Tools available: remember_this, show_my_memories, recall_memory")
+        
+        from aiohttp import web
+        app = web.Application()
+        
+        # Create SSE handler
+        async def handle_sse(request):
+            async with sse_server(request) as (read_stream, write_stream):
+                await server.run(
+                    read_stream,
+                    write_stream,
+                    server.create_initialization_options()
+                )
+        
+        app.router.add_route("*", "/sse", handle_sse)
+        
+        # Add health check endpoint
+        async def health_check(request):
+            return web.json_response({"status": "ok", "service": "pinecone-memory-mcp"})
+        
+        app.router.add_get("/health", health_check)
+        
+        # Run the web server
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, host, port)
+        await site.start()
+        
+        print(f"✅ Server started successfully!")
+        
+        # Keep server running
+        await asyncio.Event().wait()
+    else:
+        # Run with stdio (default)
+        if transport == "sse" and not SSE_AVAILABLE:
+            print("⚠️ SSE transport requested but not available. Falling back to stdio.")
+            print("   Install with: pip install mcp[sse]")
+        
+        async with stdio_server() as (read_stream, write_stream):
+            await server.run(
+                read_stream,
+                write_stream,
+                server.create_initialization_options()
+            )
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\n👋 Shutting down Pinecone Memory MCP Server...")
+        sys.exit(0)
+    except Exception as e:
+        print(f"❌ Server error: {str(e)}")
+        sys.exit(1)

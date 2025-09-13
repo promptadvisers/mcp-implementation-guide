@@ -3,3 +3,7 @@ pinecone-client>=3.0.0
 python-dotenv>=1.0.0
 openai>=1.0.0
 aiofiles>=23.0.0
+
+# Optional: For SSE/HTTP transport
+# Uncomment to enable HTTP mode:
+# aiohttp>=3.8.0

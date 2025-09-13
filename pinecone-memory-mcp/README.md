@@ -2,6 +2,32 @@
 
 A Model Context Protocol (MCP) server that provides intelligent memory storage and retrieval using Pinecone vector database. This server allows AI assistants to remember information, retrieve all memories, and recall contextually relevant memories using semantic search.
 
+## 🚀 Quick Start
+
+### Easy Installation (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/promptadvisers/mcp-implementation-guide.git
+cd pinecone-memory-mcp
+
+# Run the installer
+python install.py
+```
+
+### One-Command Installation
+
+```bash
+# Add to Claude Desktop
+python mcp-add.py install
+
+# Check status
+python mcp-add.py status
+
+# Remove if needed
+python mcp-add.py remove
+```
+
 ## Features
 
 - **🧠 Intelligent Memory Storage**: Automatically categorizes and extracts keywords from memories
@@ -33,50 +59,67 @@ A Model Context Protocol (MCP) server that provides intelligent memory storage a
 - OpenAI API key (for embeddings)
 - Claude Desktop application
 
-## Installation
+## Installation Methods
 
-1. **Clone or download this repository**
+### Method 1: Automated Installation (Easiest)
 
-2. **Install dependencies**:
 ```bash
-cd pinecone-memory-mcp
+# Run the interactive installer
+python install.py
+```
+
+This will:
+- Install all dependencies
+- Set up your API keys
+- Configure Claude Desktop automatically
+- Create command-line shortcuts
+
+### Method 2: Quick Add to Claude Desktop
+
+```bash
+# One-line installation
+python mcp-add.py install
+```
+
+### Method 3: Manual Installation
+
+1. **Install dependencies**:
+```bash
 pip install -r requirements.txt
 ```
 
-3. **Set up environment variables**:
+2. **Set up environment variables**:
 ```bash
 cp .env.example .env
+# Edit .env with your API keys
 ```
 
-Edit `.env` and add your API keys:
-```env
-PINECONE_API_KEY=your-pinecone-api-key
-PINECONE_INDEX_NAME=memory-index
-OPENAI_API_KEY=your-openai-api-key
-```
-
-4. **Configure Claude Desktop**:
-
-Add to your Claude Desktop configuration file:
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
+3. **Add to Claude Desktop config**:
 ```json
 {
   "mcpServers": {
     "pinecone-memory": {
       "command": "python",
-      "args": [
-        "/absolute/path/to/pinecone-memory-mcp/src/index.py"
-      ],
-      "env": {
-        "PINECONE_API_KEY": "your-pinecone-api-key",
-        "PINECONE_INDEX_NAME": "memory-index",
-        "OPENAI_API_KEY": "your-openai-api-key"
-      }
+      "args": ["/path/to/pinecone-memory-mcp/src/index.py"]
     }
   }
 }
+```
+
+### Method 4: Run Standalone (HTTP/SSE Mode)
+
+```bash
+# Run as HTTP server (for testing/development)
+python src/index.py --sse
+
+# Server will be available at http://localhost:8080
+```
+
+### Method 5: Test Without Installation
+
+```bash
+# Run the test script to verify functionality
+python test_server.py
 ```
 
 ## Usage
